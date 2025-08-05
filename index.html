@@ -630,10 +630,7 @@
             </div>
             
             <div class="channel-list" id="channel-list">
-                <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
-                    <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; margin-bottom: 15px;"></i>
-                    <p>Cargando lista de canales...</p>
-                </div>
+                <!-- Los canales se cargarán aquí -->
             </div>
         </div>
     </div>
@@ -649,7 +646,7 @@
     </div>
 
     <script>
-        // Playlist incrustada en el código (ejemplo)
+        // Playlist incrustada con canales de ejemplo
         const EMBEDDED_PLAYLIST = `#EXTM3U
 #EXTINF:-1 tvg-id="prueba1" tvg-logo="https://github.com/FenixIPTV/LogosTV/blob/main/Argentina/a24nuevo.png?raw=true" group-title="Argentina",A24
 http://179.51.136.23:8000/play/a05v/index.m3u8
@@ -2866,29 +2863,20 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
 
         // Cargar playlist incrustada
         function loadPlaylist() {
-            const channelList = document.getElementById('channel-list');
-            channelList.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
-                    <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; margin-bottom: 15px;"></i>
-                    <p>Cargando lista de canales...</p>
-                </div>
-            `;
-            
             try {
                 // Parsear la playlist incrustada
                 const channels = parseM3U(EMBEDDED_PLAYLIST);
                 
-                // Guardar en localStorage para consistencia
-                localStorage.setItem('fenixtv-playlist', EMBEDDED_PLAYLIST);
-                localStorage.setItem('fenixtv-channels', JSON.stringify(channels));
-                
-                // Mostrar canales
+                // Mostrar canales inmediatamente
                 displayChannels(channels);
+                
+                // Mostrar mensaje de éxito
+                showStatus("Lista de canales cargada correctamente", "success");
                 
             } catch (error) {
                 console.error('Error cargando playlist:', error);
                 showStatus(`Error al cargar playlist: ${error.message}`, 'error');
-                channelList.innerHTML = `
+                document.getElementById('channel-list').innerHTML = `
                     <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 30px; margin-bottom: 15px; color: var(--primary);"></i>
                         <p>Error al cargar la playlist</p>
@@ -2925,7 +2913,7 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                         tvgId: tvgIdMatch ? tvgIdMatch[1] : '',
                         tvgName: tvgNameMatch ? tvgNameMatch[1] : '',
                         tvgLogo: tvgLogoMatch ? tvgLogoMatch[1] : '',
-                        groupTitle: groupTitleMatch ? groupTitleMatch[1].toLowerCase() : 'tv',
+                        groupTitle: groupTitleMatch ? groupTitleMatch[1] : 'TV',
                         type: typeMatch ? typeMatch[1].toLowerCase() : 'tv',
                         url: ''
                     };
@@ -2934,11 +2922,6 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                     currentChannel.url = line;
                     channels.push(currentChannel);
                     currentChannel = {};
-                } else if (line.startsWith('#EXTGRP:')) {
-                    // Grupo de canales
-                    if (currentChannel) {
-                        currentChannel.groupTitle = line.substring(8).toLowerCase();
-                    }
                 }
             }
             
@@ -2948,7 +2931,6 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
         // Mostrar canales en la interfaz
         function displayChannels(channels, filter = 'all', searchTerm = '') {
             const channelList = document.getElementById('channel-list');
-            channelList.innerHTML = '';
             
             // Aplicar filtros
             let filteredChannels = channels.filter(channel => {
@@ -2964,19 +2946,17 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                     <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
                         <i class="fas fa-tv" style="font-size: 30px; margin-bottom: 15px; color: var(--gray);"></i>
                         <p>No se encontraron canales</p>
+                        ${searchTerm ? '<p style="font-size: 14px; color: var(--gray); margin-top: 10px;">Intenta con otro término de búsqueda</p>' : ''}
                     </div>
                 `;
+                channelCards = [];
                 return;
             }
             
+            let htmlContent = '';
+            
             filteredChannels.forEach((channel, index) => {
-                channel.index = index; // Asignar índice para referencia
-                
-                const channelCard = document.createElement('div');
-                channelCard.className = `channel-card`;
-                channelCard.tabIndex = 0;
-                channelCard.dataset.index = index;
-                channelCard.dataset.category = channel.type;
+                channel.index = index;
                 
                 // Intentar obtener un thumbnail del logo o usar la primera letra
                 let thumbContent = channel.name.charAt(0);
@@ -2984,43 +2964,50 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                     thumbContent = `<img src="${channel.tvgLogo}" alt="${channel.name}" onerror="this.parentNode.innerHTML='${channel.name.charAt(0)}'">`;
                 }
                 
-                channelCard.innerHTML = `
-                    <div class="channel-thumb">
-                        ${thumbContent}
-                    </div>
-                    <div class="channel-info">
-                        <div class="channel-title">${channel.name}</div>
-                        <div class="channel-category">${channel.groupTitle}</div>
+                htmlContent += `
+                    <div class="channel-card ${currentChannel && currentChannel.name === channel.name ? 'active' : ''}" 
+                         tabindex="0" data-index="${index}" data-category="${channel.type}">
+                        <div class="channel-thumb">
+                            ${thumbContent}
+                        </div>
+                        <div class="channel-info">
+                            <div class="channel-title">${channel.name}</div>
+                            <div class="channel-category">${channel.groupTitle}</div>
+                        </div>
                     </div>
                 `;
+            });
+            
+            channelList.innerHTML = htmlContent;
+            
+            // Configurar eventos para las tarjetas
+            channelCards = Array.from(document.querySelectorAll('.channel-card'));
+            
+            channelCards.forEach((card, index) => {
+                const channel = filteredChannels[index];
                 
                 // Eventos de reproducción
-                channelCard.addEventListener('click', () => playChannel(channel));
-                channelCard.addEventListener('keydown', (e) => {
+                card.addEventListener('click', () => playChannel(channel));
+                card.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         playChannel(channel);
                     }
                 });
                 
                 // Efectos de navegación para TV
-                channelCard.addEventListener('focus', () => {
-                    channelCard.style.transform = 'translateY(-5px)';
-                    channelCard.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
-                    channelCard.style.zIndex = '10';
+                card.addEventListener('focus', () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+                    card.style.zIndex = '10';
                     currentFocusIndex = index;
                 });
                 
-                channelCard.addEventListener('blur', () => {
-                    channelCard.style.transform = '';
-                    channelCard.style.boxShadow = '';
-                    channelCard.style.zIndex = '';
+                card.addEventListener('blur', () => {
+                    card.style.transform = '';
+                    card.style.boxShadow = '';
+                    card.style.zIndex = '';
                 });
-                
-                channelList.appendChild(channelCard);
             });
-            
-            // Actualizar lista de tarjetas para navegación con teclado
-            channelCards = Array.from(document.querySelectorAll('.channel-card'));
             
             // Enfocar el primer canal si no hay ninguno enfocado
             if (channelCards.length > 0 && currentFocusIndex === -1) {
@@ -3079,7 +3066,6 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
         function enterFullscreen(channel) {
             const fullscreenMode = document.getElementById('fullscreen-mode');
             const fullscreenPlayer = document.getElementById('fullscreen-player');
-            const normalPlayer = document.getElementById('video-player');
             
             // Ocultar la interfaz normal
             document.querySelector('.container').style.display = 'none';
@@ -3179,7 +3165,7 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
         function searchChannels() {
             const searchTerm = document.getElementById('search-input').value.trim();
             const activeCategory = document.querySelector('.category-tab.active').dataset.category;
-            const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || [];
+            const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || parseM3U(EMBEDDED_PLAYLIST);
             displayChannels(channels, activeCategory, searchTerm);
         }
 
@@ -3203,7 +3189,7 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                     tab.classList.add('active');
                     
                     const searchTerm = document.getElementById('search-input').value.trim();
-                    const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || []);
+                    const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || parseM3U(EMBEDDED_PLAYLIST);
                     displayChannels(channels, tab.dataset.category, searchTerm);
                     
                     // Actualizar menú lateral si corresponde
@@ -3225,7 +3211,7 @@ https://helmerluzo.github.io/PlutoTV_HL/vod/m3u8_ES/5/5f8479a0652fb5001add58b5.m
                         item.classList.add('active');
                         
                         const searchTerm = document.getElementById('search-input').value.trim();
-                        const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || []);
+                        const channels = JSON.parse(localStorage.getItem('fenixtv-channels') || parseM3U(EMBEDDED_PLAYLIST);
                         displayChannels(channels, item.dataset.category, searchTerm);
                         
                         // Actualizar tabs también
