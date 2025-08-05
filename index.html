@@ -3,38 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor IPTV Pro</title>
+    <title>Reproductor IPTV Pro (TV-Compatible)</title>
     <!-- Tailwind CSS para el diseño -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HLS.js para reproducir streams HLS (.m3u8) -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        /* Estilos personalizados para una mejor experiencia de TV */
         body {
-            background-color: #111827; /* Gris oscuro */
-            color: #E5E7EB; /* Gris claro */
+            background-color: #111827;
+            color: #E5E7EB;
             font-family: 'Inter', sans-serif;
         }
-        /* Estilo para el elemento enfocado con el D-pad/teclado */
-        .focused {
-            background-color: #3B82F6 !important; /* Azul brillante */
-            color: white !important;
+        /* Estilo para el elemento enfocado. Es el estándar para TV. */
+        :focus-visible {
+            outline: 3px solid #3B82F6 !important;
+            outline-offset: 2px;
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
             transition: all 0.2s ease-in-out;
         }
-        .item-card {
+        .item-card, .filter-button {
             transition: all 0.2s ease-in-out;
             position: relative;
         }
-        /* Ocultar la barra de scroll para una apariencia más limpia */
+        /* Ocultar la barra de scroll */
         #playlist-container::-webkit-scrollbar { display: none; }
         #playlist-container { -ms-overflow-style: none; scrollbar-width: none; }
         
         .filter-button.active { background-color: #3B82F6; color: white; }
-        
         #search-input { background-color: #374151; color: white; }
-        #search-input:focus { outline: 2px solid #3B82F6; }
 
         .favorite-icon {
             position: absolute;
@@ -46,12 +43,8 @@
             fill: rgba(255, 255, 255, 0.5);
             transition: all 0.2s ease;
         }
-        .favorite-icon:hover {
-            fill: rgba(255, 255, 255, 1);
-        }
-        .item-card.is-favorite .favorite-icon {
-            fill: #FBBF24; /* Amarillo para favorito */
-        }
+        .favorite-icon:hover { fill: rgba(255, 255, 255, 1); }
+        .item-card.is-favorite .favorite-icon { fill: #FBBF24; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,55 +52,44 @@
 </head>
 <body class="overflow-hidden">
 
-    <!-- Pantalla de Carga -->
     <div id="loader" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex flex-col justify-center items-center z-50">
-        <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+        <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         <p class="text-xl">Cargando playlist...</p>
     </div>
 
-    <!-- Contenedor Principal de la App -->
     <div id="app-container" class="h-screen w-screen flex flex-col p-4 md:p-6 lg:p-8">
-        <!-- Encabezado y Filtros -->
         <header id="header" class="mb-4">
             <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">Reproductor IPTV Pro</h1>
             <div class="flex items-center space-x-2 md:space-x-4">
                 <nav id="filter-nav" class="flex-shrink-0 flex space-x-2 md:space-x-4">
-                    <button data-filter="all" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none active">Todos</button>
-                    <button data-filter="favorites" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Favoritos</button>
-                    <button data-filter="tv" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">TV</button>
-                    <button data-filter="movie" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Películas</button>
-                    <button data-filter="serie" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Series</button>
+                    <button data-filter="all" tabindex="0" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none active">Todos</button>
+                    <button data-filter="favorites" tabindex="0" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Favoritos</button>
+                    <button data-filter="tv" tabindex="0" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">TV</button>
+                    <button data-filter="movie" tabindex="0" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Películas</button>
+                    <button data-filter="serie" tabindex="0" class="filter-button px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 focus:outline-none">Series</button>
                 </nav>
                 <div class="flex-grow flex justify-end items-center">
-                    <input type="search" id="search-input" placeholder="Buscar... (presiona 's')" class="w-full max-w-xs p-2 rounded-lg focus:outline-none">
+                    <input type="search" id="search-input" tabindex="0" placeholder="Buscar... (presiona 's')" class="w-full max-w-xs p-2 rounded-lg focus:outline-none">
                 </div>
             </div>
         </header>
 
-        <!-- Contenedor de la Playlist -->
         <main id="playlist-container" class="flex-grow overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            <!-- Los elementos de la lista se insertarán aquí -->
+            <!-- Los elementos se insertarán aquí -->
         </main>
         
-        <!-- Mensaje de Error o Lista Vacía -->
         <div id="message-container" class="hidden flex-grow justify-center items-center">
             <p class="text-2xl text-gray-400"></p>
         </div>
     </div>
 
-    <!-- Contenedor del Reproductor de Video -->
     <div id="player-container" class="hidden fixed inset-0 bg-black z-40 flex justify-center items-center">
         <video id="video-player" class="w-full h-full" controls autoplay></video>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
-        const PLAYLIST_URL = 'https://raw.githubusercontent.com/FenixIPTV/sturdy-telegram/refs/heads/main/playlist.m3u';
+        const PLAYLIST_URL = 'https://github.com/FenixIPTV/sturdy-telegram/raw/refs/heads/main/playlist.m3u';
 
-        // --- ELEMENTOS DEL DOM ---
         const loader = document.getElementById('loader');
         const appContainer = document.getElementById('app-container');
         const playlistContainer = document.getElementById('playlist-container');
@@ -117,7 +99,6 @@
         const filterNav = document.getElementById('filter-nav');
         const searchInput = document.getElementById('search-input');
 
-        // --- ESTADO DE LA APLICACIÓN ---
         let fullPlaylist = [];
         let currentPlaylist = [];
         let favorites = [];
@@ -125,14 +106,6 @@
         let searchTerm = '';
         let hls = null;
 
-        // Estado de la navegación
-        let focusState = {
-            context: 'filters', // 'filters', 'playlist', 'search'
-            filterIndex: 0,
-            itemIndex: -1
-        };
-
-        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', initialize);
 
         async function initialize() {
@@ -143,6 +116,8 @@
                 fullPlaylist = parseM3U(m3uText);
                 if (fullPlaylist.length > 0) {
                     renderPlaylist();
+                    // Enfocar el primer filtro al iniciar
+                    document.querySelector('.filter-button').focus();
                 } else {
                     showMessage('La playlist está vacía o no se pudo procesar.');
                 }
@@ -151,7 +126,6 @@
                 showMessage('No se pudo cargar la playlist. Revisa la URL o tu conexión.');
             } finally {
                 loader.classList.add('hidden');
-                updateFocus();
             }
         }
 
@@ -159,10 +133,7 @@
             document.addEventListener('keydown', handleKeyDown);
             filterNav.addEventListener('click', handleFilterClick);
             searchInput.addEventListener('input', handleSearch);
-            searchInput.addEventListener('blur', () => { if(focusState.context === 'search') focusState.context = 'filters'; updateFocus(); });
         }
-
-        // --- LÓGICA DE DATOS (FETCH, PARSE, FAVORITES) ---
 
         async function fetchPlaylist(url) {
             const response = await fetch(url);
@@ -174,24 +145,20 @@
             const lines = m3uText.split('\n');
             const playlist = [];
             let currentItem = {};
-
             for (const line of lines) {
                 if (line.startsWith('#EXTINF:')) {
                     currentItem = {};
                     const infoLine = line.substring(line.indexOf(' ') + 1);
                     const nameMatch = infoLine.match(/,(.+)$/);
                     currentItem.name = nameMatch ? nameMatch[1].trim() : 'Sin Nombre';
-
                     const getAttribute = (attr) => {
                         const regex = new RegExp(`${attr}="([^"]+)"`);
                         const match = infoLine.match(regex);
                         return match ? match[1] : null;
                     };
-
                     currentItem.logo = getAttribute('tvg-logo');
                     currentItem.type = getAttribute('type');
                     currentItem.group = getAttribute('group-title');
-
                     if (!currentItem.type) {
                         const lowerGroup = (currentItem.group || '').toLowerCase();
                         if (lowerGroup.includes('movie') || lowerGroup.includes('pelicula')) currentItem.type = 'movie';
@@ -201,7 +168,6 @@
                 } else if (line.trim().startsWith('http')) {
                     currentItem.url = line.trim();
                     if (currentItem.name && currentItem.url) {
-                        // Usar el índice como ID simple y único para esta sesión
                         currentItem.id = playlist.length;
                         playlist.push(currentItem);
                     }
@@ -212,8 +178,7 @@
         }
 
         function loadFavorites() {
-            const favs = localStorage.getItem('iptv_favorites');
-            favorites = favs ? JSON.parse(favs) : [];
+            favorites = JSON.parse(localStorage.getItem('iptv_favorites') || '[]');
         }
 
         function saveFavorites() {
@@ -228,26 +193,20 @@
                 favorites.push(itemId);
             }
             saveFavorites();
-            // Re-renderizar para actualizar el estado visual de la estrella y el filtro de favoritos
             renderPlaylist();
         }
 
-        // --- LÓGICA DE RENDERIZADO ---
-
         function renderPlaylist() {
+            const focusedElement = document.activeElement;
+            const focusedId = focusedElement?.dataset?.id;
+
             playlistContainer.innerHTML = '';
             
-            // 1. Aplicar filtro de categoría (all, tv, etc.)
             let filteredList;
-            if (currentFilter === 'all') {
-                filteredList = fullPlaylist;
-            } else if (currentFilter === 'favorites') {
-                filteredList = fullPlaylist.filter(item => favorites.includes(item.id));
-            } else {
-                filteredList = fullPlaylist.filter(item => item.type === currentFilter);
-            }
+            if (currentFilter === 'all') filteredList = fullPlaylist;
+            else if (currentFilter === 'favorites') filteredList = fullPlaylist.filter(item => favorites.includes(item.id));
+            else filteredList = fullPlaylist.filter(item => item.type === currentFilter);
 
-            // 2. Aplicar filtro de búsqueda
             if (searchTerm) {
                 const lowerSearchTerm = searchTerm.toLowerCase();
                 filteredList = filteredList.filter(item => item.name.toLowerCase().includes(lowerSearchTerm));
@@ -261,8 +220,6 @@
                 if(currentFilter !== 'all') msg += ` en "${currentFilter}"`;
                 showMessage(msg + '.');
                 playlistContainer.classList.add('hidden');
-                focusState.context = 'filters';
-                focusState.itemIndex = -1;
                 return;
             }
             
@@ -274,7 +231,7 @@
                 const isFav = favorites.includes(item.id);
                 card.className = `item-card bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-2 cursor-pointer aspect-video ${isFav ? 'is-favorite' : ''}`;
                 card.dataset.id = item.id;
-                card.tabIndex = -1;
+                card.tabIndex = 0; // Hacemos que sea enfocable
 
                 card.innerHTML = `
                     <svg class="favorite-icon" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
@@ -286,21 +243,19 @@
                     if (e.target.closest('.favorite-icon')) {
                         toggleFavorite(item.id);
                     } else {
-                        focusState.itemIndex = currentPlaylist.indexOf(item);
-                        playSelectedItem();
+                        playVideo(item.url);
                     }
                 });
-
                 playlistContainer.appendChild(card);
             });
-            
-            if (focusState.context === 'filters') {
-                focusState.context = 'playlist';
-                focusState.itemIndex = 0;
-            } else {
-                 focusState.itemIndex = Math.max(0, Math.min(focusState.itemIndex, currentPlaylist.length - 1));
+
+            // Intentar restaurar el foco después de renderizar
+            if (focusedId) {
+                const elementToRestoreFocus = document.querySelector(`.item-card[data-id='${focusedId}']`);
+                if (elementToRestoreFocus) {
+                    elementToRestoreFocus.focus();
+                }
             }
-            updateFocus();
         }
 
         function showMessage(text) {
@@ -309,93 +264,79 @@
             messageContainer.querySelector('p').textContent = text;
         }
 
-        // --- LÓGICA DE NAVEGACIÓN Y EVENTOS ---
-
         function handleKeyDown(e) {
-            if (!playerContainer.classList.contains('hidden')) {
-                if (e.key === 'Escape' || e.key === 'Backspace') {
-                    e.preventDefault();
+            // --- MANEJO DEL BOTÓN ATRÁS Y ESCAPE ---
+            if (e.key === 'Escape' || e.keyCode === 27 || e.key === 'Backspace' || e.keyCode === 8) {
+                e.preventDefault(); // ¡¡MUY IMPORTANTE para evitar que la app se cierre!!
+                if (!playerContainer.classList.contains('hidden')) {
                     stopVideo();
+                } else if (document.activeElement === searchInput) {
+                    searchInput.blur();
+                    document.querySelector('.filter-button.active')?.focus();
                 }
                 return;
             }
 
+            if (!playerContainer.classList.contains('hidden')) return; // No hacer nada más si el player está abierto
+
+            // --- MANEJO DE LA BÚSQUEDA ---
             if (e.key.toLowerCase() === 's' && document.activeElement !== searchInput) {
                 e.preventDefault();
-                focusState.context = 'search';
-                updateFocus();
+                searchInput.focus();
                 return;
             }
 
-            if (focusState.context === 'search') {
-                if (e.key === 'Escape') searchInput.blur();
-                if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                    focusState.context = 'filters';
-                    updateFocus();
-                }
-                return; // No procesar más teclas si estamos en búsqueda
+            const currentFocused = document.activeElement;
+            if (!currentFocused) { // Si no hay nada enfocado, enfocar el primer filtro
+                document.querySelector('.filter-button')?.focus();
+                return;
             }
             
-            e.preventDefault();
+            e.preventDefault(); // Prevenir el scroll por defecto del navegador
 
-            const filters = Array.from(document.querySelectorAll('.filter-button'));
-            const items = Array.from(document.querySelectorAll('.item-card'));
-            const itemsPerRow = getComputedStyle(playlistContainer).gridTemplateColumns.split(' ').length;
+            const isFilter = currentFocused.classList.contains('filter-button');
+            const isItem = currentFocused.classList.contains('item-card');
+            const isSearch = currentFocused.id === 'search-input';
 
-            switch (e.key) {
-                case 'ArrowUp':
-                    if (focusState.context === 'playlist') {
-                        if (focusState.itemIndex >= itemsPerRow) {
-                            focusState.itemIndex -= itemsPerRow;
-                        } else {
-                            focusState.context = 'filters';
-                            focusState.itemIndex = -1;
-                        }
-                    }
-                    break;
-                case 'ArrowDown':
-                    if (focusState.context === 'filters') {
-                        if (currentPlaylist.length > 0) {
-                            focusState.context = 'playlist';
-                            focusState.itemIndex = 0;
-                        }
-                    } else if (focusState.context === 'playlist') {
-                        if (focusState.itemIndex + itemsPerRow < items.length) {
-                            focusState.itemIndex += itemsPerRow;
-                        } else {
-                            focusState.itemIndex = items.length - 1;
-                        }
-                    }
-                    break;
-                case 'ArrowLeft':
-                    if (focusState.context === 'filters') {
-                        focusState.filterIndex = Math.max(0, focusState.filterIndex - 1);
-                    } else if (focusState.context === 'playlist' && focusState.itemIndex > -1) {
-                        if (focusState.itemIndex % itemsPerRow !== 0) {
-                             focusState.itemIndex--;
-                        }
-                    }
-                    break;
-                case 'ArrowRight':
-                    if (focusState.context === 'filters') {
-                        focusState.filterIndex = Math.min(filters.length - 1, focusState.filterIndex + 1);
-                    } else if (focusState.context === 'playlist' && focusState.itemIndex > -1) {
-                         if ((focusState.itemIndex + 1) % itemsPerRow !== 0 && focusState.itemIndex + 1 < items.length) {
-                            focusState.itemIndex++;
-                        }
-                    }
-                    break;
-                case 'Enter':
-                case ' ':
-                    if (focusState.context === 'filters') {
-                        filters[focusState.filterIndex].click();
-                    } else if (focusState.context === 'playlist') {
-                        const focusedCard = document.querySelector('.focused');
-                        if (focusedCard) focusedCard.click();
-                    }
-                    break;
+            const key = e.key;
+            const keyCode = e.keyCode;
+
+            // --- LÓGICA DE NAVEGACIÓN ---
+            if (key === 'ArrowUp' || keyCode === 38) {
+                if (isItem || isSearch) {
+                    document.querySelector('.filter-button.active')?.focus();
+                }
+            } else if (key === 'ArrowDown' || keyCode === 40) {
+                if (isFilter || isSearch) {
+                    document.querySelector('.item-card')?.focus();
+                } else if (isItem) {
+                    const items = Array.from(document.querySelectorAll('.item-card'));
+                    const currentIndex = items.indexOf(currentFocused);
+                    const itemsPerRow = getComputedStyle(playlistContainer).gridTemplateColumns.split(' ').length;
+                    const nextIndex = currentIndex + itemsPerRow;
+                    if (nextIndex < items.length) items[nextIndex].focus();
+                }
+            } else if (key === 'ArrowLeft' || keyCode === 37) {
+                if (isFilter) {
+                    (currentFocused.previousElementSibling || filterNav.lastElementChild)?.focus();
+                } else if (isItem) {
+                    currentFocused.previousElementSibling?.focus();
+                }
+            } else if (key === 'ArrowRight' || keyCode === 39) {
+                if (isFilter) {
+                    (currentFocused.nextElementSibling || filterNav.firstElementChild)?.focus();
+                } else if (isItem) {
+                    currentFocused.nextElementSibling?.focus();
+                } else if (isSearch) {
+                    document.querySelector('.filter-button')?.focus();
+                }
+            } else if (key === 'Enter' || keyCode === 13) {
+                 if (isSearch) { // Si se presiona Enter en la búsqueda, ir a los items
+                    document.querySelector('.item-card')?.focus();
+                } else {
+                    currentFocused.click();
+                }
             }
-            updateFocus();
         }
         
         function handleFilterClick(e) {
@@ -404,10 +345,6 @@
                 currentFilter = button.dataset.filter;
                 document.querySelectorAll('.filter-button').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-                
-                const filters = Array.from(document.querySelectorAll('.filter-button'));
-                focusState.filterIndex = filters.indexOf(button);
-                focusState.context = 'filters';
                 renderPlaylist();
             }
         }
@@ -417,49 +354,17 @@
             renderPlaylist();
         }
 
-        function updateFocus() {
-            document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
-            searchInput.blur();
-
-            if (focusState.context === 'search') {
-                searchInput.focus();
-                searchInput.classList.add('focused');
-            } else if (focusState.context === 'filters') {
-                const filterToFocus = document.querySelectorAll('.filter-button')[focusState.filterIndex];
-                if (filterToFocus) filterToFocus.classList.add('focused');
-            } else if (focusState.context === 'playlist' && focusState.itemIndex > -1 && currentPlaylist.length > 0) {
-                const itemToFocus = document.querySelector(`.item-card[data-id='${currentPlaylist[focusState.itemIndex].id}']`);
-                if (itemToFocus) {
-                    itemToFocus.classList.add('focused');
-                    itemToFocus.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-        }
-
-        // --- LÓGICA DEL REPRODUCTOR ---
-
-        function playSelectedItem() {
-            if (focusState.itemIndex < 0 || focusState.itemIndex >= currentPlaylist.length) return;
-            const item = currentPlaylist[focusState.itemIndex];
-            playVideo(item.url);
-        }
-
         function playVideo(url) {
             appContainer.classList.add('hidden');
             playerContainer.classList.remove('hidden');
-            
             if (hls) hls.destroy();
-
             if (Hls.isSupported() && url.includes('.m3u8')) {
                 hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(videoPlayer);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => videoPlayer.play());
                 hls.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        console.error('Error fatal de HLS:', data);
-                        playNatively(url);
-                    }
+                    if (data.fatal) playNatively(url);
                 });
             } else {
                 playNatively(url);
@@ -471,7 +376,6 @@
                 videoPlayer.src = url;
                 videoPlayer.play();
             } else {
-                console.warn('HLS.js no es soportado y el navegador no puede reproducir HLS nativamente.');
                 stopVideo();
                 showMessage('No se puede reproducir este formato de video.');
             }
@@ -486,9 +390,9 @@
             videoPlayer.src = '';
             playerContainer.classList.add('hidden');
             appContainer.classList.remove('hidden');
-            updateFocus();
+            // Devolver el foco al último elemento activo antes de reproducir
+            document.querySelector('.item-card:focus')?.focus();
         }
-
     </script>
 </body>
 </html>
